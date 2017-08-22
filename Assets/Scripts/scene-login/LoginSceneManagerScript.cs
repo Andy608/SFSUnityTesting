@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
+using Sfs2X;
 using Sfs2X.Util;
 using Sfs2X.Core;
 using Sfs2X.Entities;
@@ -16,34 +17,39 @@ public class LoginSceneManagerScript : MonoBehaviour
 
     public Text errorText;
 
+    private SmartFoxInstanceManager smartFoxManager;
+
 	protected void Start()
     {
         errorText.text = "";
         loginButton.onClick.AddListener(onLoginButtonClicked);
         backButton.onClick.AddListener(onBackButtonClicked);
+
+        smartFoxManager = SmartFoxInstanceManager.getInstance();
     }
 
     protected void Update()
     {
-        if (SmartFoxInstanceManager.connection != null)
+        if (smartFoxManager.isSmartFoxInitialized())
         {
-            SmartFoxInstanceManager.connection.ProcessEvents();
+            smartFoxManager.getSmartFox().ProcessEvents();
         }
     }
 
     private void onLoginButtonClicked()
     {
-        if (SmartFoxInstanceManager.connection == null)
-        {
-            ConfigData configData = SmartFoxInstanceManager.generateConfigData();
-            SmartFoxInstanceManager.connection.AddEventListener(SFSEvent.CONNECTION, onConnection);
-            SmartFoxInstanceManager.connection.AddEventListener(SFSEvent.CONNECTION_LOST,onConnectionLost);
-            SmartFoxInstanceManager.connection.AddEventListener(SFSEvent.LOGIN, onLogin);
-            SmartFoxInstanceManager.connection.AddEventListener(SFSEvent.LOGIN_ERROR, onLoginError);
-            SmartFoxInstanceManager.connection.AddEventListener(SFSEvent.ROOM_JOIN, onRoomJoin);
-            SmartFoxInstanceManager.connection.AddEventListener(SFSEvent.ROOM_JOIN_ERROR, onRoomJoinError);
 
-            SmartFoxInstanceManager.connection.Connect(configData);
+        if (!smartFoxManager.isSmartFoxInitialized())
+        {
+            ConfigData configData = smartFoxManager.generateConfigData();
+            smartFoxManager.getSmartFox().AddEventListener(SFSEvent.CONNECTION, onConnection);
+            smartFoxManager.getSmartFox().AddEventListener(SFSEvent.CONNECTION_LOST,onConnectionLost);
+            smartFoxManager.getSmartFox().AddEventListener(SFSEvent.LOGIN, onLogin);
+            smartFoxManager.getSmartFox().AddEventListener(SFSEvent.LOGIN_ERROR, onLoginError);
+            smartFoxManager.getSmartFox().AddEventListener(SFSEvent.ROOM_JOIN, onRoomJoin);
+            smartFoxManager.getSmartFox().AddEventListener(SFSEvent.ROOM_JOIN_ERROR, onRoomJoinError);
+
+            smartFoxManager.getSmartFox().Connect(configData);
         }
     }
 
@@ -51,18 +57,20 @@ public class LoginSceneManagerScript : MonoBehaviour
     {
         reset();
         SceneManager.LoadScene(SloverseSceneUtil.START_SCENE);
+        smartFoxManager.disconnect();
     }
 
     private void onConnection(BaseEvent e)
     {
         if ((bool)e.Params["success"])
         {
-            SmartFoxInstanceManager.connection.Send(new Sfs2X.Requests.LoginRequest(usernameField.text, passwordField.text));
+            smartFoxManager.getSmartFox().Send(new Sfs2X.Requests.LoginRequest(usernameField.text, passwordField.text));
         }
         else
         {
             reset();
             errorText.text = "Uh oh, we're having trouble connecting you to the server right now. Is it running?";
+            smartFoxManager.disconnect();
         }
     }
 
@@ -75,6 +83,8 @@ public class LoginSceneManagerScript : MonoBehaviour
         {
             errorText.text = "Connection to the server was lost: " + reason;
         }
+
+        smartFoxManager.disconnect();
     }
 
     private void onLogin(BaseEvent e)
@@ -89,11 +99,12 @@ public class LoginSceneManagerScript : MonoBehaviour
         var errorCode = e.Params["errorCode"];
 
         errorText.text = "Failed to login: The username or password you entered was incorrect.";//(string)e.Params["errorMessage"];
+        smartFoxManager.disconnect();
     }
 
     private void onRoomJoin(BaseEvent e)
     {
-        SmartFoxInstanceManager.resetEventListeners();
+        reset();
         SceneManager.LoadScene(SloverseSceneUtil.PLAY_SCENE);
     }
 
@@ -104,8 +115,7 @@ public class LoginSceneManagerScript : MonoBehaviour
 
     private void reset()
     {
-        SmartFoxInstanceManager.resetEventListeners();
-        SmartFoxInstanceManager.disconnect();
+        smartFoxManager.resetEventListeners();
 
         usernameField.text = "";
         passwordField.text = "";

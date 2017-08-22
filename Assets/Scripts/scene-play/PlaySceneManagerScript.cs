@@ -10,13 +10,12 @@ public class PlaySceneManagerScript : MonoBehaviour
     
 	void Start ()
     {
-        logoutButton.onClick.AddListener(onLogoutButtonClicked);
+        logoutButton.onClick.AddListener(OnLogoutButtonClicked);
     }
 
-    private void onLogoutButtonClicked()
+    private void OnLogoutButtonClicked()
     {
-        SmartFoxInstanceManager.resetEventListeners();
-        SmartFoxInstanceManager.disconnect();
+        SmartFoxInstanceManager.getInstance().disconnect();
 
         SceneManager.LoadScene(SloverseSceneUtil.START_SCENE);
     }

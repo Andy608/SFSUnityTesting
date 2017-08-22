@@ -5,29 +5,35 @@ using Sfs2X.Util;
 public class SmartFoxInstanceManager : MonoBehaviour
 {
     private static SmartFoxInstanceManager instance;
-    private static SmartFox sfs;
+    private SmartFox sfs;
 
-    public static SmartFox connection
+    public bool isConnected;
+
+    protected void Start()
     {
-        get
-        {
-            if (instance == null)
-            {
-                initInstance();
-            }
+        DontDestroyOnLoad(this.gameObject);
+    }
 
-            return sfs;
+    protected void Update()
+    {
+        if (sfs != null)
+        {
+            isConnected = sfs.IsConnected;
+        }
+        else
+        {
+            isConnected = false;
+        }
+    }
+
+    public static SmartFoxInstanceManager getInstance()
+    {
+        if (instance == null)
+        {
+            initInstance();
         }
 
-        set
-        {
-            if (instance == null)
-            {
-                initInstance();
-            }
-
-            sfs = value;
-        }
+        return instance;
     }
 
     private static void initInstance()
@@ -37,18 +43,28 @@ public class SmartFoxInstanceManager : MonoBehaviour
 
     public static bool isInitialized()
     {
+        return (instance != null);
+    }
+
+    public bool isSmartFoxInitialized()
+    {
         return (sfs != null);
     }
 
-    public static void resetEventListeners()
+    public SmartFox getSmartFox()
     {
-        if (isInitialized())
+        return sfs;
+    }
+
+    public void resetEventListeners()
+    {
+        if (isSmartFoxInitialized())
         {
             sfs.RemoveAllEventListeners();
         }
     }
 
-    public static ConfigData generateConfigData()
+    public ConfigData generateConfigData()
     {
         ConfigData config = new ConfigData();
 
@@ -69,13 +85,16 @@ public class SmartFoxInstanceManager : MonoBehaviour
         return config;
     }
 
-    public static void disconnect()
+    public void disconnect()
     {
-        if (isInitialized() && sfs.IsConnected)
+        getInstance().resetEventListeners();
+
+        if (isSmartFoxInitialized() && sfs.IsConnected)
         {
             sfs.Disconnect();
-            sfs = null;
         }
+
+        sfs = null;
     }
 
     private void OnApplicationQuit()

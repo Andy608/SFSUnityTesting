@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
+using Sfs2X;
 using Sfs2X.Util;
 using Sfs2X.Core;
 using Sfs2X.Requests;
@@ -9,12 +10,14 @@ using Sfs2X.Entities.Data;
 
 public class SignupSceneManagerScript : MonoBehaviour
 {
-    public Button signupButton;
+    /*public Button signupButton;
     public Button backButton;
 
     public InputField usernameField;
     public InputField passwordField;
     public InputField emailField;
+
+    private SmartFoxInstanceManager smartFoxManager;
 
 	protected void Start ()
     {
@@ -24,27 +27,27 @@ public class SignupSceneManagerScript : MonoBehaviour
 
     protected void Update()
     {
-        if (SmartFoxInstanceManager.connection != null)
+        if (smartFoxManager.isSmartFoxInitialized())
         {
-            SmartFoxInstanceManager.connection.ProcessEvents();
+            smartFoxManager.getSmartFox().ProcessEvents();
         }
     }
 
     private void onSignupButtonClicked()
     {
-        if (SmartFoxInstanceManager.connection == null || !SmartFoxInstanceManager.connection.IsConnected)
+        if (!smartFoxManager.isSmartFoxInitialized() || !smartFoxManager.getSmartFox().IsConnected)
         {
-            ConfigData configData = SmartFoxInstanceManager.generateConfigData();
-            SmartFoxInstanceManager.connection.AddEventListener(SFSEvent.EXTENSION_RESPONSE, onExtensionResponse);
-            
-            SmartFoxInstanceManager.connection.Connect(configData);
+            ConfigData configData = smartFoxManager.generateConfigData();
+            smartFoxManager.getSmartFox().AddEventListener(SFSEvent.EXTENSION_RESPONSE, onExtensionResponse);
+
+            smartFoxManager.getSmartFox().Connect(configData);
         }
 
         SFSObject signupObj = new SFSObject();
         signupObj.PutUtfString("username", usernameField.text);
         signupObj.PutUtfString("password", passwordField.text);
         signupObj.PutUtfString("email", emailField.text);
-        SmartFoxInstanceManager.connection.Send(new ExtensionRequest(SloverseCommandList.SIGNUP_SUBMIT_CMD, signupObj));
+        smartFoxManager.getSmartFox().Send(new ExtensionRequest(SloverseCommandList.SIGNUP_SUBMIT_CMD, signupObj));
     }
 	
 	private void onBackButtonClicked()
@@ -76,11 +79,11 @@ public class SignupSceneManagerScript : MonoBehaviour
 
     private void reset()
     {
-        SmartFoxInstanceManager.resetEventListeners();
-        SmartFoxInstanceManager.disconnect();
+        smartFoxManager.resetEventListeners();
+        smartFoxManager.disconnect();
 
         usernameField.text = "";
         passwordField.text = "";
         emailField.text = "";
-    }
+    }*/
 }
