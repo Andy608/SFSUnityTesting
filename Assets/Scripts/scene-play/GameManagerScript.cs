@@ -11,13 +11,11 @@ using Sfs2X.Requests;
 
 public class GameManagerScript : MonoBehaviour
 {
-    private SloverseRequestManager requestManager;
     private SmartFoxInstanceManager smartFoxManager;
 
 	protected void Start ()
     {
         smartFoxManager = SmartFoxInstanceManager.getInstance();
-        requestManager = new SloverseRequestManager(smartFoxManager);
 
         if (!smartFoxManager.isSmartFoxInitialized())
         {
@@ -29,7 +27,7 @@ public class GameManagerScript : MonoBehaviour
         smartFoxManager.getSmartFox().AddEventListener(SFSEvent.USER_EXIT_ROOM, OnUserLeaveRoom);
         smartFoxManager.getSmartFox().AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
 
-        requestManager.SendSpawnRequest();
+        SloverseRequestManager.SendSpawnRequest();
     }
 
     protected void Update()
@@ -41,7 +39,7 @@ public class GameManagerScript : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            requestManager.SendUpdatedTargetPosition(smartFoxManager.getSmartFox().MySelf, Camera.main.ScreenToWorldPoint(Input.mousePosition));
+            SloverseRequestManager.SendUpdatedTargetPositionRequest(smartFoxManager.getSmartFox().MySelf, Camera.main.ScreenToWorldPoint(Input.mousePosition));
         }
     }
 
@@ -66,6 +64,10 @@ public class GameManagerScript : MonoBehaviour
         {
             RemoveDuplicatePlayer(cmdParams);
         }
+        else if (command == SloverseCommandList.UPDATE_PLAYER_DIRECTION)
+        {
+            UpdatePlayerDirection(cmdParams);
+        }
     }
 
     private void CreateNewPlayerInRoom(ISFSObject data)
@@ -87,7 +89,22 @@ public class GameManagerScript : MonoBehaviour
         else
         {
             Debug.Log("CREATING SERVER USER " + name + ": " + posX.ToString() + ", " + posY.ToString());
+
+            bool hasTarget = playerData.GetBool("hasTarget");
+
+            Vector3 targetPosition = new Vector3();
+
+            if (hasTarget)
+            {
+                float targetPosX = playerData.GetFloat("targetX");
+                float targetPosY = playerData.GetFloat("targetY");
+
+                targetPosition.x = targetPosX;
+                targetPosition.y = targetPosY;
+            }
+
             PlayerManagerScript.Instance.SpawnServerPlayer(userID, posX, posY);
+            PlayerManagerScript.Instance.UpdatePlayerPosition(userID, SloverseCoordinateSpaceManager.sloverseToWorldSpace(targetPosition), SloverseCoordinateSpaceManager.sloverseToWorldSpace(new Vector3(posX, posY, 0)), false, hasTarget);
         }
     }
 
@@ -98,12 +115,27 @@ public class GameManagerScript : MonoBehaviour
         int userID = playerData.GetInt("id");
         float posX = playerPositionData.GetFloat("x");
         float posY = playerPositionData.GetFloat("y");
+        bool lerp = playerData.GetBool("lerp");
 
         User user = smartFoxManager.getSmartFox().UserManager.GetUserById(userID);
         string name = user.Name;
 
-        Debug.Log("UPDATING USER " + name + ": " + posX.ToString() + ", " + posY.ToString());
-        PlayerManagerScript.Instance.UpdatePlayerPosition(userID, posX, posY);
+        Debug.Log("UPDATING USER " + name + ": " + posX.ToString() + ", " + posY.ToString() + " LERP: " + lerp);
+
+        bool hasTarget = playerData.GetBool("hasTarget");
+
+        Vector3 targetPosition = new Vector3();
+
+        if (hasTarget)
+        {
+            float targetPosX = playerData.GetFloat("targetX");
+            float targetPosY = playerData.GetFloat("targetY");
+
+            targetPosition.x = targetPosX;
+            targetPosition.y = targetPosY;
+        }
+
+        PlayerManagerScript.Instance.UpdatePlayerPosition(userID, SloverseCoordinateSpaceManager.sloverseToWorldSpace(targetPosition), SloverseCoordinateSpaceManager.sloverseToWorldSpace(new Vector3(posX, posY, 0)), lerp, hasTarget);
     }
 
     private void UpdatePlayersPosition(ISFSObject playerPositionsBundle)
@@ -119,13 +151,36 @@ public class GameManagerScript : MonoBehaviour
             int userID = playerData.GetInt("id");
             float posX = playerPositionData.GetFloat("x");
             float posY = playerPositionData.GetFloat("y");
+            bool lerp = playerData.GetBool("lerp");
 
             User user = smartFoxManager.getSmartFox().UserManager.GetUserById(userID);
             string name = user.Name;
             
-            Debug.Log("UPDATING USER FROM BUNDLE " + name + ": " + posX.ToString() + ", " + posY.ToString());
-            PlayerManagerScript.Instance.UpdatePlayerPosition(userID, posX, posY);
+            Debug.Log("UPDATING USER FROM BUNDLE " + name + ": " + posX.ToString() + ", " + posY.ToString() + " LERP: " + lerp);
+
+            bool hasTarget = playerData.GetBool("hasTarget");
+
+            Vector3 targetPosition = new Vector3();
+
+            if (hasTarget)
+            {
+                float targetPosX = playerData.GetFloat("targetX");
+                float targetPosY = playerData.GetFloat("targetY");
+
+                targetPosition.x = targetPosX;
+                targetPosition.y = targetPosY;
+            }
+
+            PlayerManagerScript.Instance.UpdatePlayerPosition(userID, SloverseCoordinateSpaceManager.sloverseToWorldSpace(targetPosition), SloverseCoordinateSpaceManager.sloverseToWorldSpace(new Vector3(posX, posY, 0)), lerp, hasTarget);
         }
+    }
+
+    private void UpdatePlayerDirection(ISFSObject directionData)
+    {
+        int userID = directionData.GetInt("id");
+        EnumLookDirection direction = (EnumLookDirection)directionData.GetInt("dir");
+
+        PlayerManagerScript.Instance.UpdatePlayerDirection(userID, direction);
     }
 
     private void RemoveDuplicatePlayer(ISFSObject data)

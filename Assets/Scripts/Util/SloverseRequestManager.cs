@@ -9,28 +9,34 @@ public class SloverseRequestManager
 {
     public const string SPAWN_PLAYER_IN_ROOM = "SpawnPlayerInRoom";
     public const string UPDATE_TARGET_POSITION = "UpdateTargetPosition";
+    public const string UPDATE_PLAYER_DIRECTION = "UpdatePlayerDirection";
 
-    private SmartFoxInstanceManager smartFoxManager;
-
-    public SloverseRequestManager(SmartFoxInstanceManager sfsManager)
-    {
-        smartFoxManager = sfsManager;
-    }
-
-    public void SendSpawnRequest()
+    public static void SendSpawnRequest()
     {
         ExtensionRequest spawnRequest = new ExtensionRequest(SPAWN_PLAYER_IN_ROOM, new SFSObject());
-        smartFoxManager.getSmartFox().Send(spawnRequest);
+        SmartFoxInstanceManager.getInstance().getSmartFox().Send(spawnRequest);
     }
 
-    public void SendUpdatedTargetPosition(User player, Vector3 targetPosition)
+    public static void SendUpdatedTargetPositionRequest(User player, Vector3 targetPosition)
     {
+        targetPosition = SloverseCoordinateSpaceManager.worldToSloverseSpace(targetPosition);
+
         ISFSObject targetPosData = new SFSObject();
         targetPosData.PutInt("id", player.Id);
         targetPosData.PutFloat("x", targetPosition.x);
         targetPosData.PutFloat("y", targetPosition.y);
 
         ExtensionRequest moveRequest = new ExtensionRequest(UPDATE_TARGET_POSITION, targetPosData);
-        smartFoxManager.getSmartFox().Send(moveRequest);
+        SmartFoxInstanceManager.getInstance().getSmartFox().Send(moveRequest);
+    }
+
+    public static void SendDirectionChangeRequest(User player, EnumLookDirection lookDirection)
+    {
+        ISFSObject playerDirectionData = new SFSObject();
+        playerDirectionData.PutInt("id", player.Id);
+        playerDirectionData.PutInt("dir", (int)lookDirection);
+
+        ExtensionRequest directionRequest = new ExtensionRequest(UPDATE_PLAYER_DIRECTION, playerDirectionData);
+        SmartFoxInstanceManager.getInstance().getSmartFox().Send(directionRequest);
     }
 }

@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class PlayerManagerScript : MonoBehaviour
 {
-    private GameObject playerPrefab;
+    private GameObject clientPlayerPrefab;
+    private GameObject serverPlayerPrefab;
 
     private GameObject clientPlayer;
     private Dictionary<int, GameObject> playersInRoom;
@@ -23,9 +24,8 @@ public class PlayerManagerScript : MonoBehaviour
         instance = this;
         playersInRoom = new Dictionary<int, GameObject>();
 
-        playerPrefab = Resources.Load<GameObject>("Sloth/Sloth") as GameObject;
-
-        Debug.Log("player prefab = " + playerPrefab);
+        clientPlayerPrefab = Resources.Load<GameObject>("Prefabs/Sloth/ClientSloth") as GameObject;
+        serverPlayerPrefab = Resources.Load<GameObject>("Prefabs/Sloth/ServerSloth") as GameObject;
     }
 
     public GameObject GetPlayerObject(int playerID)
@@ -35,31 +35,41 @@ public class PlayerManagerScript : MonoBehaviour
 
     public void SpawnClientPlayer(int playerID, float x, float y)
     {
-        clientPlayer = Instantiate(playerPrefab) as GameObject;
+        clientPlayer = Instantiate(clientPlayerPrefab) as GameObject;
         playersInRoom.Add(playerID, clientPlayer);
 
-        clientPlayer.transform.position = new Vector3(x, y, 0);
+        clientPlayer.transform.position = SloverseCoordinateSpaceManager.sloverseToWorldSpace(new Vector3(x, y, 0));
     }
 
     public void SpawnServerPlayer(int playerID, float x, float y)
     {
-        GameObject serverPlayerObj = Instantiate(playerPrefab) as GameObject;
+        GameObject serverPlayerObj = Instantiate(serverPlayerPrefab) as GameObject;
         playersInRoom.Add(playerID, serverPlayerObj);
 
-        serverPlayerObj.transform.position = new Vector3(x, y, 0);
+        serverPlayerObj.transform.position = SloverseCoordinateSpaceManager.sloverseToWorldSpace(new Vector3(x, y, 0));
     }
 
-    public void UpdatePlayerPosition(int playerID, float x, float y)
+    public void UpdatePlayerPosition(int playerID, Vector3 targetPosition, Vector3 serverPosition, bool interpolate, bool hasTarget)
     {
         GameObject player = playersInRoom[playerID];
 
         if (player != null)
         {
-            player.transform.position = new Vector3(x, y, 0);
+            PlayerPositionLerpScript playerScript = player.GetComponent<PlayerPositionLerpScript>();
+            playerScript.updateServerPosition(targetPosition, serverPosition, interpolate, hasTarget);
         }
         else
         {
             Debug.Log("PLAYER IS NULL. CAN'T UPDATE POSITION. AHHHHHH");
+        }
+    }
+
+    public void UpdatePlayerDirection(int playerID, EnumLookDirection lookDirection)
+    {
+        if (playerID != SmartFoxInstanceManager.getInstance().getSmartFox().MySelf.Id)
+        {
+            GameObject player = playersInRoom[playerID];//instead of id check, check if gameobject is server or client.
+            player.GetComponent<ServerPlayerLookDirectionScript>().setLookDirection(lookDirection);
         }
     }
 

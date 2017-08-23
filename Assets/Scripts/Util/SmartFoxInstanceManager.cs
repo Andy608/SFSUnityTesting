@@ -6,7 +6,7 @@ public class SmartFoxInstanceManager : MonoBehaviour
 {
     private static SmartFoxInstanceManager instance;
     private SmartFox sfs;
-
+    
     public bool isConnected;
 
     protected void Start()
