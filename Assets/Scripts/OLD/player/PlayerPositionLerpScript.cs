@@ -8,6 +8,7 @@ public class PlayerPositionLerpScript : MonoBehaviour
     private Vector3 targetPosition;
 
     private float dampingFactor;
+    private float speed = 5.0f;
 
     private bool hasTarget;
     
@@ -36,6 +37,6 @@ public class PlayerPositionLerpScript : MonoBehaviour
 
     protected void Update ()
     {
-        transform.position = Vector3.MoveTowards(transform.position, serverPosition, Time.deltaTime * 5.0f);
+        transform.position = Vector3.MoveTowards(transform.position, serverPosition, Time.deltaTime * speed);
 	}
 }
