@@ -10,7 +10,7 @@ public class ActionData
         updated = false;
     }
 
-    public bool hasUpdate()
+    public bool hasNewUpdate()
     {
         return updated;
     }

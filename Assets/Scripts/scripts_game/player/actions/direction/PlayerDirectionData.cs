@@ -22,12 +22,13 @@ public class PlayerDirectionData : ActionData
         return playerDirection;
     }
 
-    public void setPlayerDirection(EnumPlayerDirection direction)
+    public void setPlayerDirection(EnumPlayerDirection direction, bool send)
     {
         playerDirection = direction;
-        setUpdated(true);
+        setUpdated(send);
     }
 
+    //Mostly for client players
     public ISFSObject toSFSObject()
     {
         ISFSObject directionObj = new SFSObject();
@@ -35,13 +36,14 @@ public class PlayerDirectionData : ActionData
         return directionObj;
     }
 
+    //Mostly for server players
     public static PlayerDirectionData fromSFSObject(ISFSObject dirObj)
     {
         PlayerDirectionData data = new PlayerDirectionData();
 
         int direction = dirObj.GetInt("dir");
 
-        if (EnumPlayerDirectionClass.isValid(direction))
+        if (PlayerDirectionUtil.isValid(direction))
         {
             data.playerDirection = (EnumPlayerDirection)direction;
         }

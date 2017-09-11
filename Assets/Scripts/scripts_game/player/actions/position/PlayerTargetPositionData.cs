@@ -7,13 +7,13 @@ public class PlayerTargetPositionData : ActionData
     private bool hasTarget;
     private bool lerpToTarget;
 
-    private Vector2 targetPosition;
+    private Vector3 targetPosition;
 
     public PlayerTargetPositionData()
     {
         hasTarget = false;
         lerpToTarget = false;
-        targetPosition = new Vector2(0.5f, -1.0f);
+        targetPosition = SloverseCoordinateSpaceManager.sloverseToWorldSpace(new Vector3(0.5f, -1.0f, 0.0f));
     }
 
     public PlayerTargetPositionData(float x, float y, bool lerp) : this(new Vector2(x, y), lerp)
@@ -33,17 +33,25 @@ public class PlayerTargetPositionData : ActionData
         return hasTarget;
     }
 
-    public Vector2 getTargetPosition()
+    public void setHasTargetPosition(bool b)
+    {
+        hasTarget = b;
+    }
+
+    public Vector3 getTargetPosition()
     {
         return targetPosition;
     }
 
-    public void setTargetPosition(Vector2 position, bool lerp)
+    public void setTargetPosition(Vector3 position, bool lerp, bool sendToServer)
     {
-        targetPosition.Set(position.x, position.y);
+        targetPosition.Set(position.x, position.y, 0.0f);
         hasTarget = true;
         setLerpToTarget(lerp);
-        setUpdated(true);
+
+        setUpdated(sendToServer);
+
+        //Debug.Log("UPDATED TARGET POSITION");
     }
 
     public bool shouldLerp()

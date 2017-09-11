@@ -55,26 +55,32 @@ public class EventListenerManager : MonoBehaviour
 
     private void SpawnPlayerInRoom(ISFSObject playerData)
     {
-        ISFSObject playerDataObj = playerData.GetSFSObject("playerDataObj");
+        /*ISFSObject playerDataObj = playerData.GetSFSObject("playerDataObj");
         ISFSObject playerPositionObj = playerDataObj.GetSFSObject("positionObj");
-        ISFSObject playerUpdateObj = playerDataObj.GetSFSObject("updateDataObj");
+        //ISFSObject playerUpdateObj = playerDataObj.GetSFSObject("updateDataObj");
 
         int playerId = playerDataObj.GetInt("id");
+        Debug.Log("ID: " + playerId);
+
         Vector2 position = new Vector2(playerPositionObj.GetFloat("x"), playerPositionObj.GetFloat("y"));
 
         User user = smartFoxManager.getSmartFox().UserManager.GetUserById(playerId);
         string name = user.Name;
 
-        if (playerId == smartFoxManager.getSmartFox().MySelf.Id)
-        {
-            Debug.Log("Creating client user: " + name + " at: (" + position.x + ", " + position.y + ")");
-            PlayerConnectionManager.Instance.SpawnPlayer(playerId, position, true);
-        }
-        else
-        {
-            Debug.Log("Creating remote user: " + name + " at: (" + position.x + ", " + position.y + ")");
-            PlayerConnectionManager.Instance.SpawnPlayer(playerId, position, false);
-        }
+        PlayerConnectionManager.Instance.SpawnPlayer(playerId, position, (playerId == smartFoxManager.getSmartFox().MySelf.Id));*/
+
+        ISFSObject playerDataObj = playerData.GetSFSObject("playerDataObj");
+        ISFSObject playerPositionObj = playerDataObj.GetSFSObject("positionObj");
+        ISFSObject playerUpdateObj = playerDataObj.GetSFSObject("updateDataObj");
+        PlayerData newData = PlayerData.fromSFSObject(playerUpdateObj);
+
+        int playerId = playerDataObj.GetInt("id");
+        Vector2 position = new Vector2(playerPositionObj.GetFloat("x"), playerPositionObj.GetFloat("y"));
+
+        PlayerConnectionManager.Instance.SpawnPlayer(playerId, position, (playerId == smartFoxManager.getSmartFox().MySelf.Id));
+
+        GameObject player = PlayerConnectionManager.Instance.GetPlayerGameObject(playerId);
+        player.GetComponent<PlayerScript>().updatePlayerData(newData);
     }
 
     private void RemoveDuplicatePlayer(ISFSObject data)
@@ -83,7 +89,7 @@ public class EventListenerManager : MonoBehaviour
 
         int userID = data.GetInt("id");
         User user = smartFoxManager.getSmartFox().UserManager.GetUserById(userID);
-        PlayerManagerScript.Instance.RemovePlayer(user.Id);
+        PlayerConnectionManager.Instance.RemovePlayer(user.Id);
 
         SmartFoxInstanceManager.getInstance().disconnect();
         SceneManager.LoadScene(SloverseSceneUtil.START_SCENE);
@@ -102,24 +108,33 @@ public class EventListenerManager : MonoBehaviour
             int playerId = actionsArrayIndexObj.GetInt("id");
 
             User user = smartFoxManager.getSmartFox().UserManager.GetUserById(playerId);
-            string name = user.Name;
-            Debug.Log("Updating actions for: " + name);
 
-            bool isTargetPositionUpdated = actionsObj.GetBool("isTargetPos");
-
-            if (isTargetPositionUpdated)
+            if (user == null)
             {
-                ISFSObject targetPosObj = actionsObj.GetSFSObject("targetPosObj");
-                Vector2 targetPosition = new Vector2(targetPosObj.GetFloat("x"), targetPosObj.GetFloat("y"));
-                bool hasTarget = targetPosObj.GetBool("hasTarget");
-                bool lerpToTarget = targetPosObj.GetBool("lerpToTarget");
-
-                PlayerConnectionManager.Instance.UpdateTargetPosition(playerId, targetPosition, hasTarget, lerpToTarget);
+                return;
             }
 
-            //Is direction
+            string name = user.Name;
+            //Debug.Log("Updating actions for: " + name);
 
-            //Is state
+            PlayerData newData = PlayerData.fromSFSObject(actionsObj);
+
+            GameObject player = PlayerConnectionManager.Instance.GetPlayerGameObject(playerId);
+            player.GetComponent<PlayerScript>().updatePlayerData(newData);
+
+            //Debug.Log("player data null: " + (playerData == null));
+
+            /*if (actionsObj.GetBool("isTargetPos"))
+            {
+                PlayerTargetPositionData targetPositionData = newData.getTargetPositionData();
+                PlayerConnectionManager.Instance.UpdateTargetPosition(playerId, targetPositionData.getTargetPosition(), targetPositionData.hasTargetPosition(), targetPositionData.shouldLerp());
+            }*/
+
+            if (!user.IsItMe && actionsObj.GetBool("isPlayerDir"))
+            {
+                PlayerDirectionData directionData = newData.getDirectionData();
+                PlayerConnectionManager.Instance.UpdateServerPlayerDirection(playerId, directionData.getPlayerDirection());
+            }
         }
     }
 
@@ -128,7 +143,7 @@ public class EventListenerManager : MonoBehaviour
         User user = (User)e.Params["user"];
         Room room = (Room)e.Params["room"];
 
-        PlayerManagerScript.Instance.RemovePlayer(user.Id);
+        PlayerConnectionManager.Instance.RemovePlayer(user.Id);
         Debug.Log(user.Name + " left the room.");
     }
 

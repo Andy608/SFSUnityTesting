@@ -1,6 +1,4 @@
 ﻿using UnityEngine;
-using UnityEditor;
-using Sfs2X.Entities;
 using Sfs2X.Entities.Data;
 
 public class PlayerData
@@ -11,14 +9,19 @@ public class PlayerData
 
     public PlayerData()
     {
-        targetPositionData = new PlayerTargetPositionData();
-        directionData = new PlayerDirectionData();
-        stateData = new PlayerStateData();
+
+    }
+
+    public PlayerData(PlayerTargetPositionData targetPos, PlayerDirectionData dir, PlayerStateData state)
+    {
+        targetPositionData = targetPos;
+        directionData = dir;
+        stateData = state;
     }
 
     public bool areUpdatesAvailable()
     {
-        return (targetPositionData.hasUpdate() || directionData.hasUpdate() || stateData.hasUpdate());
+        return (targetPositionData.hasNewUpdate() || directionData.hasNewUpdate() || stateData.hasNewUpdate());
     }
 
     public PlayerTargetPositionData getTargetPositionData()
@@ -38,17 +41,17 @@ public class PlayerData
 
     public void resetUpdates()
     {
-        if (targetPositionData.hasUpdate())
+        if (targetPositionData.hasNewUpdate())
         {
             targetPositionData.resetUpdate();
         }
 
-        if (directionData.hasUpdate())
+        if (directionData.hasNewUpdate())
         {
             directionData.resetUpdate();
         }
 
-        if (stateData.hasUpdate())
+        if (stateData.hasNewUpdate())
         {
             stateData.resetUpdate();
         }
@@ -57,27 +60,32 @@ public class PlayerData
     public static PlayerData fromSFSObject(ISFSObject playerActionsUpdateBundle)
     {
         PlayerData data = new PlayerData();
-        
+
         if (playerActionsUpdateBundle.GetBool("isTargetPos"))
         {
+            data.targetPositionData = new PlayerTargetPositionData();
             ISFSObject targetPositionObj = playerActionsUpdateBundle.GetSFSObject("targetPosObj");
 
-            Vector2 targetPosition = new Vector2();
+            Vector3 targetPosition = new Vector3();
             targetPosition.x = targetPositionObj.GetFloat("x");
             targetPosition.y = targetPositionObj.GetFloat("y");
-            data.targetPositionData.setTargetPosition(targetPosition, targetPositionObj.GetBool("lerpToTarget"));
+            targetPosition = SloverseCoordinateSpaceManager.sloverseToWorldSpace(targetPosition);
+            data.targetPositionData.setTargetPosition(targetPosition, targetPositionObj.GetBool("lerpToTarget"), false);
         }
 
         if (playerActionsUpdateBundle.GetBool("isPlayerDir"))
         {
+            data.directionData = new PlayerDirectionData();
             ISFSObject directionObj = playerActionsUpdateBundle.GetSFSObject("playerDirObj");
-            data.directionData.setPlayerDirection((EnumPlayerDirection)directionObj.GetInt("dir"));
+
+            data.directionData.setPlayerDirection((EnumPlayerDirection)directionObj.GetInt("dir"), false);
         }
 
         if (playerActionsUpdateBundle.GetBool("isPlayerState"))
         {
+            data.stateData = new PlayerStateData();
             ISFSObject stateObj = playerActionsUpdateBundle.GetSFSObject("playerStateObj");
-            data.stateData.setPlayerState((EnumPlayerState)stateObj.GetInt("state"));
+            data.stateData.setPlayerState((EnumPlayerState)stateObj.GetInt("state"), false);
         }
 
         return data;

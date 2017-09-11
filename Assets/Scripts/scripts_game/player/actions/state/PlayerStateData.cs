@@ -21,10 +21,10 @@ public class PlayerStateData :ActionData
         return playerState;
     }
 
-    public void setPlayerState(EnumPlayerState state)
+    public void setPlayerState(EnumPlayerState state, bool send)
     {
         playerState = state;
-        setUpdated(true);
+        setUpdated(send);
     }
 
     public ISFSObject toSFSObject()
